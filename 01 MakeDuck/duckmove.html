@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en-nz">
+<head>
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+        .duck-panel {
+            width: 100%;
+            height: 600px;
+            overflow-x: hidden;
+            position: relative;
+        }
+        .duck {
+            position: absolute;
+            z-index: 100;
+        }
+        .make-duck-trigger {
+            position: absolute;
+            left: 50px;
+            bottom: 50px;
+            font-size: 20px;
+        }
+        .auto-duck-trigger {
+            position: absolute;
+            left: 50px;
+            bottom: 10px;
+            font-size: 20px;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="duck-panel">
+ 
+    </div>
+    <div class="make-duck-trigger"> > > > make duck < < < </div>
+    <div class="auto-duck-trigger"> > > > initiate auto duck < < < </div>
+    <script src="scripts/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function(){
+            $(".make-duck-trigger").on("click", function() {
+                ohWow.makeDuck();
+            })
+            $(".auto-duck-trigger").on("click", function() {
+                autoDuck();
+            })
+            
+        });
+
+        function autoDuck() {
+            ohWow.makeDuck();
+            setTimeout(function() { autoDuck() }, 500);
+        }
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        var everything = function() {
+            var self = this;
+
+            self.duckImageWidth = 285;
+            self.duckImageHeight = 285;
+            self.startX = self.duckImageWidth * -1;
+            self.screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0); // lol don't resize the window y'all
+            self.duckPanelElement = ".duck-panel";
+            self.heightOfDuckPanel = parseInt($(self.duckPanelElement).height());
+            self.minY = 0;
+            self.maxY = self.heightOfDuckPanel - self.duckImageHeight;
+
+            self.duckCounter = 0;
+            self.ducks = [];
+
+            self.removeDoneDucks = function() {
+                console.log(self.ducks);
+                self.ducks = self.ducks.filter(function(item) { 
+                    return item.complete === false;
+                })
+                console.log(self.ducks);
+            }
+
+            self.makeDuck = function () {
+                var targetY = getRandomInt(self.minY, self.maxY);
+                var startY = getRandomInt(self.minY, self.maxY);
+                var id = 'duck' + self.duckCounter;
+
+                // make the hhhhtml
+                $(self.duckPanelElement).append($('<div></div>')
+                    .attr({ id : id })
+                    .addClass("duck")
+                .append($('<img />')
+                    .attr({ alt : 'duck' })
+                    .attr({ src : '' })
+                ));
+
+                self.duckCounter = self.duckCounter+1;
+
+                var options = {
+                    id : id,
+                    startX : self.startX,
+                    targetX : self.screenWidth,
+                    startY : startY,
+                    targetY : targetY,
+                    duckCompleteCallback : self.removeDoneDucks
+                };
+                var newDuck = new duck(options);
+                self.ducks.push(newDuck);
+            }
+        }
+
+        var duck = function(options) {
+            var self = this;
+
+            self.id = options.id;
+            self.x = options.startX;
+            self.y = options.startY;
+            self.targetX = options.targetX;
+            self.targetY = options.targetY;
+            self.duckCompleteCallback = options.duckCompleteCallback;
+            self.movementIncrement = 40;
+            self.movementWait = 100;
+            self.frames = ['images\\duck-f1.png','images\\duck-f2.png','images\\duck-f3.png','images\\duck-f4.png','images\\duck-f5.png','images\\duck-f4.png','images\\duck-f3.png','images\\duck-f2.png'];
+            self.currentFrame = getRandomInt(0,self.frames.length-1);
+            self.animationWait = 100;
+            self.complete = false;
+
+            self.draw = function() {
+                $('#'+self.id).children('img').attr('src' , self.frames[self.currentFrame]);
+            }
+            self.done = function() {
+                self.complete = true;
+                // remove the html
+                $('#'+self.id).remove();
+                self.duckCompleteCallback();
+            }
+            self.move = function() {
+                // they might change direction right
+                var angleRadians = Math.atan2(self.targetY - self.y,self.targetX - self.x);
+                var angleDegrees = angleRadians* 180 / Math.PI;
+
+                var hypo = self.movementIncrement;
+                var adj = Math.cos(angleRadians) * hypo;
+                var opo = Math.sin(angleRadians) * hypo;
+
+                self.x = self.x + adj;
+                self.y = self.y + opo;
+
+                if(self.x > self.targetX) {
+                    self.x = self.targetX;
+                }
+
+                $('#'+self.id).css({ left: self.x + 'px' });
+                $('#'+self.id).css({ top: self.y + 'px' });
+                if(self.x== self.targetX) {
+                    self.done();
+                } else {
+                    setTimeout(function() { self.move() }, self.movementWait);
+                }
+            }
+            self.move();
+            self.animate = function() {
+                if(self.complete) return;
+                self.currentFrame = self.currentFrame + 1;
+                if(self.currentFrame == self.frames.length) {
+                    self.currentFrame = 0;
+                }
+                self.draw();
+                setTimeout(function() { self.animate() }, self.animationWait);
+            }
+            self.animate();
+
+        }
+
+        var ohWow = new everything();
+        console.log(ohWow);
+
+    </script>
+</body>
+</html>
