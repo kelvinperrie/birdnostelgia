@@ -16,13 +16,7 @@
             position: absolute;
             z-index: 100;
         }
-        .make-duck-trigger {
-            position: absolute;
-            left: 50px;
-            bottom: 50px;
-            font-size: 20px;
-        }
-        .auto-duck-trigger {
+        .trigger-container {
             position: absolute;
             left: 50px;
             bottom: 10px;
@@ -35,24 +29,34 @@
     <div class="duck-panel">
  
     </div>
-    <div class="make-duck-trigger"> > > > make duck < < < </div>
-    <div class="auto-duck-trigger"> > > > initiate auto duck < < < </div>
+    <div class="trigger-container">
+        <div class="make-duck-left-trigger"> > > > make duck from left < < < </div>
+        <div class="make-duck-right-trigger"> > > > make duck from right < < < </div>
+        <div class="auto-ordered-duck-trigger"> > > > initiate auto duck ordered < < < </div>
+        <div class="auto-chaos-duck-trigger"> > > > initiate auto duck chaos < < < </div>
+    </div>
     <script src="scripts/jquery-3.3.1.min.js"></script>
     <script type="text/javascript">
 
         $(document).ready(function(){
-            $(".make-duck-trigger").on("click", function() {
-                ohWow.makeDuck();
+            $(".make-duck-left-trigger").on("click", function() {
+                ohWow.makeDuck(true);
             })
-            $(".auto-duck-trigger").on("click", function() {
+            $(".make-duck-right-trigger").on("click", function() {
+                ohWow.makeDuck(false);
+            })
+            $(".auto-ordered-duck-trigger").on("click", function() {
+                autoDuck(true);
+            })
+            $(".auto-chaos-duck-trigger").on("click", function() {
                 autoDuck();
             })
             
         });
 
-        function autoDuck() {
-            ohWow.makeDuck();
-            setTimeout(function() { autoDuck() }, 500);
+        function autoDuck(goingRight) {
+            ohWow.makeDuck(goingRight);
+            setTimeout(function() { autoDuck(goingRight) }, 500);
         }
 
         function getRandomInt(min, max) {
@@ -84,10 +88,16 @@
                 console.log(self.ducks);
             }
 
-            self.makeDuck = function () {
+            self.makeDuck = function (goingRight) {
                 var targetY = getRandomInt(self.minY, self.maxY);
                 var startY = getRandomInt(self.minY, self.maxY);
                 var id = 'duck' + self.duckCounter;
+                var framesRight = ['images\\duck-right-f1.png','images\\duck-right-f2.png','images\\duck-right-f3.png','images\\duck-right-f4.png','images\\duck-right-f5.png','images\\duck-right-f4.png','images\\duck-right-f3.png','images\\duck-right-f2.png'];
+                var framesLeft = ['images\\duck-left-f1.png','images\\duck-left-f2.png','images\\duck-left-f3.png','images\\duck-left-f4.png','images\\duck-left-f5.png','images\\duck-left-f4.png','images\\duck-left-f3.png','images\\duck-left-f2.png'];
+                if (typeof goingRight === 'undefined') {
+                    goingRight = getRandomInt(0, 1) === 1;
+                }
+                console.log("goingRight: " + goingRight);
 
                 // make the hhhhtml
                 $(self.duckPanelElement).append($('<div></div>')
@@ -102,11 +112,13 @@
 
                 var options = {
                     id : id,
-                    startX : self.startX,
-                    targetX : self.screenWidth,
+                    startX : goingRight ? self.startX : self.screenWidth,
+                    targetX : goingRight ? self.screenWidth : self.startX,
                     startY : startY,
                     targetY : targetY,
-                    duckCompleteCallback : self.removeDoneDucks
+                    duckCompleteCallback : self.removeDoneDucks,
+                    frames : goingRight ? framesRight : framesLeft,
+                    goingRight : goingRight
                 };
                 var newDuck = new duck(options);
                 self.ducks.push(newDuck);
@@ -124,10 +136,11 @@
             self.duckCompleteCallback = options.duckCompleteCallback;
             self.movementIncrement = 40;
             self.movementWait = 100;
-            self.frames = ['images\\duck-f1.png','images\\duck-f2.png','images\\duck-f3.png','images\\duck-f4.png','images\\duck-f5.png','images\\duck-f4.png','images\\duck-f3.png','images\\duck-f2.png'];
+            self.frames = options.frames;
             self.currentFrame = getRandomInt(0,self.frames.length-1);
             self.animationWait = 100;
             self.complete = false;
+            self.goingRight = options.goingRight;
 
             self.draw = function() {
                 $('#'+self.id).children('img').attr('src' , self.frames[self.currentFrame]);
@@ -147,11 +160,18 @@
                 var adj = Math.cos(angleRadians) * hypo;
                 var opo = Math.sin(angleRadians) * hypo;
 
-                self.x = self.x + adj;
                 self.y = self.y + opo;
 
-                if(self.x > self.targetX) {
-                    self.x = self.targetX;
+                if(self.goingRight) {
+                    self.x = self.x + adj;
+                    if(self.x > self.targetX) {
+                        self.x = self.targetX;
+                    }
+                } else {
+                    self.x = self.x + adj;
+                    if(self.x < self.targetX) {
+                        self.x = self.targetX;
+                    }
                 }
 
                 $('#'+self.id).css({ left: self.x + 'px' });
