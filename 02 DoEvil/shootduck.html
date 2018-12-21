@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en-nz">
+<head>
+    <title></title>
+    <style>
+        body {
+            margin: 0;
+        }
+        .duck-panel {
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+            position: relative;
+            border: solid 1px #3e3e3e;
+        }
+        .duck {
+            position: absolute;
+            z-index: 100;
+        }
+        .shot {
+            position: absolute;
+            z-index: 50;
+        }
+        .trigger-container {
+            position: absolute;
+            left: 50px;
+            bottom: 10px;
+            font-size: 20px;
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none;
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="duck-panel">
+ 
+    </div>
+    <div class="trigger-container">
+        <div class="make-duck-left-trigger"> > > > make duck from left < < < </div>
+        <div class="make-duck-right-trigger"> > > > make duck from right < < < </div>
+        <div class="auto-ordered-duck-trigger"> > > > initiate auto duck ordered < < < </div>
+        <div class="auto-chaos-duck-trigger"> > > > initiate auto duck chaos < < < </div>
+    </div>
+    <script src="scripts/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function(){
+            $(".make-duck-left-trigger").on("click", function() {
+                ohWow.makeDuck(true);
+            })
+            $(".make-duck-right-trigger").on("click", function() {
+                ohWow.makeDuck(false);
+            })
+            $(".auto-ordered-duck-trigger").on("click", function() {
+                autoDuck(true);
+            })
+            $(".auto-chaos-duck-trigger").on("click", function() {
+                autoDuck();
+            })
+            
+        });
+
+        function autoDuck(goingRight) {
+            ohWow.makeDuck(goingRight);
+            setTimeout(function() { autoDuck(goingRight) }, 500);
+        }
+
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        var everything = function() {
+            var self = this;
+
+            self.duckImageWidth = 285;
+            self.duckImageHeight = 285;
+            self.startX = self.duckImageWidth * -1;
+            self.screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0); // lol don't resize the window y'all
+            self.duckPanelElement = ".duck-panel";
+            self.heightOfDuckPanel = parseInt($(self.duckPanelElement).height());
+            self.minY = 0;
+            self.maxY = self.heightOfDuckPanel - self.duckImageHeight;
+            self.shots = 2;
+            self.maxShots = 2;
+            self.shotCounter = 0;
+
+            self.duckCounter = 0;
+            self.ducks = [];
+
+            self.removeDoneDucks = function() {
+                console.log(self.ducks);
+                self.ducks = self.ducks.filter(function(item) { 
+                    return item.complete === false;
+                })
+                console.log(self.ducks);
+            }
+
+            $('.duck-panel').click(function (event) { self.takeShot(event); });
+            self.takeShot = function(event) {
+                if (self.shots > 0) {
+                    console.log("fired a shot");
+                    self.shotCounter = self.shotCounter + 1;
+                    self.shots = self.shots - 1;
+                    // show boom
+                    self.showShotIndicator(self.shotCounter, event.clientX, event.clientY, "boom");
+                    return true;
+                } else {
+                    // nope, reloading
+                    console.log("reloading");
+                    // show reload indication
+                    self.showShotIndicator(null, event.clientX, event.clientY, "reload");
+                    // todo, some sort of delay I guess
+                    self.shots = self.maxShots;
+                    return false;
+                }
+            }
+            self.showShotIndicator = function (shotId, x, y, type) {
+                var shotIndicatorWidth = 200; // is it?
+                var shotIndicatorHeight = 100; // is it?
+                var top = y - (shotIndicatorHeight / 2);
+                var left = x - (shotIndicatorWidth / 2);
+                var id = '';
+                if (type === "boom") {
+                    id = "shot" + shotId;
+                    $(self.duckPanelElement).append($('<div></div>')
+                        .attr({ id: id, style: 'top: ' + top + 'px; left: ' + left + 'px;' })
+                        .addClass("shot")
+                        .append($('<img />')
+                            .attr({ alt: 'boom' })
+                            .attr({ src: 'images\\boom.png' })
+                        ));
+                } else {
+                    id = 'reload';
+                    $(self.duckPanelElement).append($('<div></div>')
+                        .attr({ id: id, style: 'top: ' + top + 'px; left: ' + left + 'px;' })
+                        .addClass("shot")
+                        .append($('<img />')
+                            .attr({ alt: 'boom' })
+                            .attr({ src: 'images\\reload.png' })
+                        ));
+                }
+                setTimeout(function () { self.removeShotIndicator(id) }, 50);
+            }
+            self.removeShotIndicator = function (elementId) {
+                $('#'+elementId).remove();
+            }
+
+            self.makeDuck = function (goingRight) {
+                var targetY = getRandomInt(self.minY, self.maxY);
+                var startY = getRandomInt(self.minY, self.maxY);
+                var id = 'duck' + self.duckCounter;
+                var framesRight = ['images\\duck-right-f1.png','images\\duck-right-f2.png','images\\duck-right-f3.png','images\\duck-right-f4.png','images\\duck-right-f5.png','images\\duck-right-f4.png','images\\duck-right-f3.png','images\\duck-right-f2.png'];
+                var framesLeft = ['images\\duck-left-f1.png','images\\duck-left-f2.png','images\\duck-left-f3.png','images\\duck-left-f4.png','images\\duck-left-f5.png','images\\duck-left-f4.png','images\\duck-left-f3.png','images\\duck-left-f2.png'];
+                if (typeof goingRight === 'undefined') {
+                    goingRight = getRandomInt(0, 1) === 1;
+                }
+                console.log("goingRight: " + goingRight);
+
+                // make the hhhhtml
+                $(self.duckPanelElement).append($('<div></div>')
+                    .attr({ id : id })
+                    .addClass("duck")
+                .append($('<img />')
+                    .attr({ alt : 'duck' })
+                    .attr({ src : '' })
+                ));
+
+                self.duckCounter = self.duckCounter+1;
+
+                var options = {
+                    id : id,
+                    startX : goingRight ? self.startX : self.screenWidth,
+                    targetX : goingRight ? self.screenWidth : self.startX,
+                    startY : startY,
+                    targetY : targetY,
+                    duckCompleteCallback : self.removeDoneDucks,
+                    frames : goingRight ? framesRight : framesLeft,
+                    goingRight: goingRight,
+                    duckClickedCallback: self.takeShot
+                };
+                var newDuck = new duck(options);
+                self.ducks.push(newDuck);
+            }
+        }
+
+        var duck = function(options) {
+            var self = this;
+
+            self.id = options.id;
+            self.x = options.startX;
+            self.y = options.startY;
+            self.targetX = options.targetX;
+            self.targetY = options.targetY;
+            self.duckCompleteCallback = options.duckCompleteCallback;
+            self.movementIncrement = 40;
+            self.movementWait = 100;
+            self.frames = options.frames;
+            self.currentFrame = getRandomInt(0,self.frames.length-1);
+            self.animationWait = 100;
+            self.complete = false;
+            self.goingRight = options.goingRight;
+            self.dead = false;
+            self.clickedCallback = options.duckClickedCallback;
+
+            self.draw = function() {
+                $('#'+self.id).children('img').attr('src' , self.frames[self.currentFrame]);
+            }
+            self.done = function() {
+                self.complete = true;
+                // remove the html
+                $('#'+self.id).remove();
+                self.duckCompleteCallback();
+            }
+            $('#' + self.id).click(function (event) { console.log('clicked that duck'); self.clicked(event); event.stopPropagation(); })
+            self.clicked = function () {
+                // check to see if this duck got shot
+                if (self.clickedCallback(event)) {
+                    self.kill();
+                }
+            }
+            self.kill = function () {
+                self.dead = true;
+                // change the direction to drop straight down
+                self.targetX = self.x;
+                self.targetY = 1000; // i don't know, how far off the screen do we have to do?
+
+                self.frames = ['images\\duck-drop.png'];
+                self.currentFrame = 0;
+            }
+            self.move = function () {
+                if (self.dead) {
+                    self.y = self.y + self.movementIncrement;
+
+                    $('#' + self.id).css({ left: self.x + 'px' });
+                    $('#' + self.id).css({ top: self.y + 'px' });
+                    if (self.y >= self.targetY) {
+                        self.done();
+                    } else {
+                        setTimeout(function () { self.move() }, self.movementWait);
+                    }
+                } else {
+                    // they might change direction right
+                    var angleRadians = Math.atan2(self.targetY - self.y, self.targetX - self.x);
+                    var angleDegrees = angleRadians * 180 / Math.PI;
+
+                    var hypo = self.movementIncrement;
+                    var adj = Math.cos(angleRadians) * hypo;
+                    var opo = Math.sin(angleRadians) * hypo;
+
+                    self.y = self.y + opo;
+
+                    if (self.goingRight) {
+                        self.x = self.x + adj;
+                        if (self.x > self.targetX) {
+                            self.x = self.targetX;
+                        }
+                    } else {
+                        self.x = self.x + adj;
+                        if (self.x < self.targetX) {
+                            self.x = self.targetX;
+                        }
+                    }
+
+                    $('#' + self.id).css({ left: self.x + 'px' });
+                    $('#' + self.id).css({ top: self.y + 'px' });
+                    if (self.x == self.targetX) {
+                        self.done();
+                    } else {
+                        setTimeout(function () { self.move() }, self.movementWait);
+                    }
+                }
+            }
+            self.move();
+            self.animate = function() {
+                if(self.complete) return;
+                self.currentFrame = self.currentFrame + 1;
+                if(self.currentFrame == self.frames.length) {
+                    self.currentFrame = 0;
+                }
+                self.draw();
+                setTimeout(function() { self.animate() }, self.animationWait);
+            }
+            self.animate();
+
+        }
+
+        var ohWow = new everything();
+        console.log(ohWow);
+
+    </script>
+</body>
+</html>
